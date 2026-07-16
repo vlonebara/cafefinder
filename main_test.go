@@ -89,3 +89,35 @@ func TestCafeCount(t *testing.T) {
 		assert.Equal(t, req.want, gotCafes, "expected: %d, got: %d", req.want, gotCafes)
 	}
 }
+
+func TestCafeSearch(t *testing.T) {
+	handler := http.HandlerFunc(mainHandle)
+
+	requests := []struct {
+		search    string // передаваемое значение search
+		wantCount int    // ожидаемое количество кафе в ответе
+	}{
+		{search: "фасоль", wantCount: 0},
+		{search: "кофе", wantCount: 2},
+		{search: "вилка", wantCount: 1},
+	}
+
+	for _, req := range requests {
+		response := httptest.NewRecorder()
+		respUrl := "/cafe?city=moscow&search=" + req.search
+
+		httpReq := httptest.NewRequest("GET", respUrl, nil)
+		handler.ServeHTTP(response, httpReq)
+
+		assert.Equal(t, http.StatusOK, response.Code)
+
+		cafes := strings.Split(strings.TrimSpace(response.Body.String()), ",")
+
+		gotCafes := len(cafes)
+		if response.Body.String() == "" || response.Body.String() == "/n" {
+			gotCafes = 0
+		}
+
+		assert.Equal(t, req.wantCount, gotCafes, "expected: %d, got: %d", req.wantCount, gotCafes)
+	}
+}
